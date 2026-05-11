@@ -97,16 +97,24 @@ jobs:
 
       - name: Install dependencies
         run: |
-          choco install mosquitto -y
-          New-Item -ItemType Directory -Force -Path "C:\Program Files\nlohmann" | Out-Null
-          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp" -OutFile "C:\Program Files\nlohmann\json.hpp"
+          $ErrorActionPreference = "Stop"
+          $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
+          if (-not $vcpkgRoot) { $vcpkgRoot = "C:\\vcpkg" }
+          if (-not (Test-Path $vcpkgRoot)) { throw "vcpkg not found at $vcpkgRoot" }
+          $triplet = if ("${{ matrix.platform }}" -eq "Win32") { "x86-windows" } else { "x64-windows" }
+          & "$vcpkgRoot\\vcpkg.exe" install mosquitto nlohmann-json --triplet $triplet
 
       - name: Build
         run: |
           New-Item -ItemType Directory -Force -Path artifacts\${{ matrix.arch }} | Out-Null
           cd MMDVMHost
           $ErrorActionPreference = "Stop"
-          msbuild MMDVMHost.vcxproj /m /p:Configuration=Release /p:Platform=${{ matrix.platform }} 2>&1 | Tee-Object -FilePath ..\artifacts\${{ matrix.arch }}\build.log
+          $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
+          if (-not $vcpkgRoot) { $vcpkgRoot = "C:\\vcpkg" }
+          $triplet = if ("${{ matrix.platform }}" -eq "Win32") { "x86-windows" } else { "x64-windows" }
+          $inc = "$vcpkgRoot\\installed\\$triplet\\include;%(AdditionalIncludeDirectories)"
+          $lib = "$vcpkgRoot\\installed\\$triplet\\lib;%(AdditionalLibraryDirectories)"
+          msbuild MMDVMHost.vcxproj /m /p:Configuration=Release /p:Platform=${{ matrix.platform }} /p:AdditionalIncludeDirectories="$inc" /p:AdditionalLibraryDirectories="$lib" 2>&1 | Tee-Object -FilePath ..\artifacts\${{ matrix.arch }}\build.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Collect artifacts
