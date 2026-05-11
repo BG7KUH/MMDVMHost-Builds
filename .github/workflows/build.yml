@@ -115,9 +115,9 @@ jobs:
           $vcpkgInclude = "$vcpkgRoot\\installed\\$triplet\\include"
           $vcpkgLib = "$vcpkgRoot\\installed\\$triplet\\lib"
           $vcxproj = "MMDVMHost.vcxproj"
-          (Get-Content $vcxproj) \
-            -replace "C:\\\\Program Files\\\\mosquitto\\\\devel;C:\\\\Program Files;", "$vcpkgInclude;C:\\Program Files;" \
-            -replace "C:\\\\Program Files\\\\mosquitto\\\\devel;%(AdditionalLibraryDirectories)", "$vcpkgLib;%(AdditionalLibraryDirectories)" \
+          (Get-Content $vcxproj) `
+            -replace "C:\\\\Program Files\\\\mosquitto\\\\devel;C:\\\\Program Files;", "$vcpkgInclude;C:\\Program Files;" `
+            -replace "C:\\\\Program Files\\\\mosquitto\\\\devel;%(AdditionalLibraryDirectories)", "$vcpkgLib;%(AdditionalLibraryDirectories)" `
             | Set-Content $vcxproj
           msbuild MMDVMHost.vcxproj /m /p:Configuration=Release /p:Platform=${{ matrix.platform }} 2>&1 | Tee-Object -FilePath ..\artifacts\${{ matrix.arch }}\build.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
