@@ -60,7 +60,8 @@ jobs:
             -v "${{ github.workspace }}:/work" \
             ubuntu:22.04 bash -lc "\
               apt-get update && \
-              apt-get install -y build-essential make git pkg-config \\n                libmosquitto-dev libssl-dev nlohmann-json3-dev libserialport-dev && \
+              apt-get install -y build-essential make git pkg-config \
+                libmosquitto-dev libssl-dev nlohmann-json3-dev libserialport-dev && \
               git clone https://github.com/g4klx/MMDVMHost.git /tmp/MMDVMHost && \
               cd /tmp/MMDVMHost && \
               make clean && (make -j2 2>&1 | tee /work/artifacts/arm64-gcc/build.log) && \
@@ -84,8 +85,6 @@ jobs:
             platform: Win32
           - arch: x64
             platform: x64
-          - arch: arm64
-            platform: ARM64
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -96,12 +95,18 @@ jobs:
       - name: Clone upstream
         run: git clone https://github.com/g4klx/MMDVMHost.git
 
+      - name: Install dependencies
+        run: |
+          choco install mosquitto -y
+          New-Item -ItemType Directory -Force -Path "C:\Program Files\nlohmann" | Out-Null
+          Invoke-WebRequest -Uri "https://raw.githubusercontent.com/nlohmann/json/develop/single_include/nlohmann/json.hpp" -OutFile "C:\Program Files\nlohmann\json.hpp"
+
       - name: Build
         run: |
           New-Item -ItemType Directory -Force -Path artifacts\${{ matrix.arch }} | Out-Null
           cd MMDVMHost
           $ErrorActionPreference = "Stop"
-          msbuild MMDVMHost.sln /m /p:Configuration=Release /p:Platform=${{ matrix.platform }} 2>&1 | Tee-Object -FilePath ..\artifacts\${{ matrix.arch }}\build.log
+          msbuild MMDVMHost.vcxproj /m /p:Configuration=Release /p:Platform=${{ matrix.platform }} 2>&1 | Tee-Object -FilePath ..\artifacts\${{ matrix.arch }}\build.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - name: Collect artifacts
