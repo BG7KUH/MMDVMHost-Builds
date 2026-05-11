@@ -2,7 +2,12 @@ name: build-mmdvmhost
 
 on:
   push:
+    tags:
+      - "v*"
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-linux:
@@ -151,4 +156,21 @@ jobs:
         with:
           name: mmdvmhost-windows-${{ matrix.arch }}
           path: artifacts/${{ matrix.arch }}
+
+  publish-release:
+    name: publish-release
+    runs-on: ubuntu-22.04
+    needs: [build-linux, build-windows]
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release-artifacts/**
 
