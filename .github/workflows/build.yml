@@ -114,6 +114,11 @@ jobs:
           $triplet = if ("${{ matrix.platform }}" -eq "Win32") { "x86-windows-static" } else { "x64-windows-static" }
           $env:VCPKG_INCLUDE = "$vcpkgRoot\\installed\\$triplet\\include"
           $env:VCPKG_LIB = "$vcpkgRoot\\installed\\$triplet\\lib"
+          $mosquittoStatic = Join-Path $env:VCPKG_LIB "mosquitto_static.lib"
+          $mosquittoLib = Join-Path $env:VCPKG_LIB "mosquitto.lib"
+          if ((Test-Path $mosquittoStatic) -and (-not (Test-Path $mosquittoLib))) {
+            Copy-Item -Path $mosquittoStatic -Destination $mosquittoLib
+          }
           $propsLines = @(
             '<Project>',
             '  <ItemDefinitionGroup>',
