@@ -129,7 +129,7 @@ jobs:
             '    </ClCompile>',
             '    <Link>',
             '      <AdditionalLibraryDirectories>$(VCPKG_LIB);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>',
-            '      <AdditionalDependencies>pthreadVC3.lib;libssl.lib;libcrypto.lib;%(AdditionalDependencies)</AdditionalDependencies>',
+            '      <AdditionalDependencies>pthreadVC3.lib;libssl.lib;libcrypto.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>',
             '    </Link>',
             '  </ItemDefinitionGroup>',
             '</Project>'
