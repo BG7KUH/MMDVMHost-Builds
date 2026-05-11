@@ -101,7 +101,7 @@ jobs:
           $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
           if (-not $vcpkgRoot) { $vcpkgRoot = "C:\\vcpkg" }
           if (-not (Test-Path $vcpkgRoot)) { throw "vcpkg not found at $vcpkgRoot" }
-          $triplet = if ("${{ matrix.platform }}" -eq "Win32") { "x86-windows" } else { "x64-windows" }
+          $triplet = if ("${{ matrix.platform }}" -eq "Win32") { "x86-windows-static" } else { "x64-windows-static" }
           & "$vcpkgRoot\\vcpkg.exe" install mosquitto nlohmann-json --triplet $triplet
 
       - name: Build
@@ -111,7 +111,7 @@ jobs:
           $ErrorActionPreference = "Stop"
           $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
           if (-not $vcpkgRoot) { $vcpkgRoot = "C:\\vcpkg" }
-          $triplet = if ("${{ matrix.platform }}" -eq "Win32") { "x86-windows" } else { "x64-windows" }
+          $triplet = if ("${{ matrix.platform }}" -eq "Win32") { "x86-windows-static" } else { "x64-windows-static" }
           $env:VCPKG_INCLUDE = "$vcpkgRoot\\installed\\$triplet\\include"
           $env:VCPKG_LIB = "$vcpkgRoot\\installed\\$triplet\\lib"
           $propsLines = @(
@@ -119,6 +119,7 @@ jobs:
             '  <ItemDefinitionGroup>',
             '    <ClCompile>',
             '      <AdditionalIncludeDirectories>$(VCPKG_INCLUDE);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>',
+            '      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>',
             '    </ClCompile>',
             '    <Link>',
             '      <AdditionalLibraryDirectories>$(VCPKG_LIB);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>',
