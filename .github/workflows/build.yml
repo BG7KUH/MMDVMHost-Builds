@@ -1,0 +1,118 @@
+name: build-mmdvmhost
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build-linux:
+    name: linux-${{ matrix.arch }}-${{ matrix.compiler }}
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            compiler: gcc
+          - arch: x86_64
+            compiler: clang
+          - arch: arm64
+            compiler: gcc
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install deps (x86_64)
+        if: matrix.arch == 'x86_64'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential make git pkg-config \
+            libmosquitto-dev libssl-dev nlohmann-json3-dev libserialport-dev
+          if [ "${{ matrix.compiler }}" = "clang" ]; then
+            sudo apt-get install -y clang
+          fi
+
+      - name: Build (x86_64)
+        if: matrix.arch == 'x86_64'
+        run: |
+          git clone https://github.com/g4klx/MMDVMHost.git
+          cd MMDVMHost
+          mkdir -p ../artifacts/${{ matrix.arch }}-${{ matrix.compiler }}
+          set -o pipefail
+          if [ "${{ matrix.compiler }}" = "clang" ]; then
+            make clean
+            make -j2 CC=clang CXX=clang++ 2>&1 | tee ../artifacts/${{ matrix.arch }}-${{ matrix.compiler }}/build.log
+          else
+            make clean
+            make -j2 2>&1 | tee ../artifacts/${{ matrix.arch }}-${{ matrix.compiler }}/build.log
+          fi
+          cp MMDVMHost ../artifacts/${{ matrix.arch }}-${{ matrix.compiler }}/
+
+      - name: Build (arm64 via container)
+        if: matrix.arch == 'arm64'
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build (arm64 via container - run)
+        if: matrix.arch == 'arm64'
+        run: |
+          mkdir -p artifacts/arm64-gcc
+          docker run --rm --platform linux/arm64 \
+            -v "${{ github.workspace }}:/work" \
+            ubuntu:22.04 bash -lc "\
+              apt-get update && \
+              apt-get install -y build-essential make git pkg-config \\n                libmosquitto-dev libssl-dev nlohmann-json3-dev libserialport-dev && \
+              git clone https://github.com/g4klx/MMDVMHost.git /tmp/MMDVMHost && \
+              cd /tmp/MMDVMHost && \
+              make clean && (make -j2 2>&1 | tee /work/artifacts/arm64-gcc/build.log) && \
+              cp MMDVMHost /work/artifacts/arm64-gcc/\
+            "
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mmdvmhost-linux-${{ matrix.arch }}-${{ matrix.compiler }}
+          path: artifacts/${{ matrix.arch }}-${{ matrix.compiler }}/
+
+  build-windows:
+    name: windows-${{ matrix.arch }}
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86
+            platform: Win32
+          - arch: x64
+            platform: x64
+          - arch: arm64
+            platform: ARM64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Clone upstream
+        run: git clone https://github.com/g4klx/MMDVMHost.git
+
+      - name: Build
+        run: |
+          New-Item -ItemType Directory -Force -Path artifacts\${{ matrix.arch }} | Out-Null
+          cd MMDVMHost
+          $ErrorActionPreference = "Stop"
+          msbuild MMDVMHost.sln /m /p:Configuration=Release /p:Platform=${{ matrix.platform }} 2>&1 | Tee-Object -FilePath ..\artifacts\${{ matrix.arch }}\build.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Collect artifacts
+        run: |
+          Get-ChildItem -Path MMDVMHost -Filter MMDVMHost.exe -Recurse | \
+            Select-Object -First 1 | \
+            Copy-Item -Destination artifacts\${{ matrix.arch }}\ -Force
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mmdvmhost-windows-${{ matrix.arch }}
+          path: artifacts/${{ matrix.arch }}
+
