@@ -112,8 +112,8 @@ jobs:
           $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
           if (-not $vcpkgRoot) { $vcpkgRoot = "C:\\vcpkg" }
           $triplet = if ("${{ matrix.platform }}" -eq "Win32") { "x86-windows" } else { "x64-windows" }
-          $inc = "$vcpkgRoot\\installed\\$triplet\\include;%(AdditionalIncludeDirectories)"
-          $lib = "$vcpkgRoot\\installed\\$triplet\\lib;%(AdditionalLibraryDirectories)"
+          $inc = "$vcpkgRoot\\installed\\$triplet\\include"
+          $lib = "$vcpkgRoot\\installed\\$triplet\\lib"
           msbuild MMDVMHost.vcxproj /m /p:Configuration=Release /p:Platform=${{ matrix.platform }} /p:AdditionalIncludeDirectories="$inc" /p:AdditionalLibraryDirectories="$lib" 2>&1 | Tee-Object -FilePath ..\artifacts\${{ matrix.arch }}\build.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
