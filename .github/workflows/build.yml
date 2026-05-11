@@ -128,7 +128,7 @@ jobs:
           )
           $propsLines | Set-Content Directory.Build.props
           $gitVersion = (git rev-parse HEAD)
-          "const char *gitversion = \"$gitVersion\";" | Set-Content GitVersion.h
+          Set-Content GitVersion.h -Value ('const char *gitversion = "' + $gitVersion + '";')
           msbuild MMDVMHost.vcxproj /m /p:Configuration=Release /p:Platform=${{ matrix.platform }} 2>&1 | Tee-Object -FilePath ..\artifacts\${{ matrix.arch }}\build.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
