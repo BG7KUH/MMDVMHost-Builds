@@ -114,18 +114,19 @@ jobs:
           $triplet = if ("${{ matrix.platform }}" -eq "Win32") { "x86-windows" } else { "x64-windows" }
           $env:VCPKG_INCLUDE = "$vcpkgRoot\\installed\\$triplet\\include"
           $env:VCPKG_LIB = "$vcpkgRoot\\installed\\$triplet\\lib"
-          @"
-<Project>
-  <ItemDefinitionGroup>
-    <ClCompile>
-      <AdditionalIncludeDirectories>$(VCPKG_INCLUDE);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ClCompile>
-    <Link>
-      <AdditionalLibraryDirectories>$(VCPKG_LIB);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-    </Link>
-  </ItemDefinitionGroup>
-</Project>
-"@ | Set-Content Directory.Build.props
+          $propsLines = @(
+            '<Project>',
+            '  <ItemDefinitionGroup>',
+            '    <ClCompile>',
+            '      <AdditionalIncludeDirectories>$(VCPKG_INCLUDE);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>',
+            '    </ClCompile>',
+            '    <Link>',
+            '      <AdditionalLibraryDirectories>$(VCPKG_LIB);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>',
+            '    </Link>',
+            '  </ItemDefinitionGroup>',
+            '</Project>'
+          )
+          $propsLines | Set-Content Directory.Build.props
           msbuild MMDVMHost.vcxproj /m /p:Configuration=Release /p:Platform=${{ matrix.platform }} 2>&1 | Tee-Object -FilePath ..\artifacts\${{ matrix.arch }}\build.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
