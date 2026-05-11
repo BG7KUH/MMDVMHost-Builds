@@ -168,9 +168,27 @@ jobs:
         with:
           path: release-artifacts
 
+      - name: Prepare release assets (unique names)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          shopt -s nullglob
+          for d in release-artifacts/*; do
+            [ -d "$d" ] || continue
+            artifact="$(basename "$d")"
+            for f in "$d"/*; do
+              [ -f "$f" ] || continue
+              base="$(basename "$f")"
+              cp "$f" "release-assets/${artifact}-${base}"
+            done
+          done
+          ls -lah release-assets
+
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            release-artifacts/**
+            release-assets/*
+          overwrite_files: true
 
