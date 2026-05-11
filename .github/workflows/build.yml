@@ -123,6 +123,7 @@ jobs:
             '<Project>',
             '  <ItemDefinitionGroup>',
             '    <ClCompile>',
+            '      <PreprocessorDefinitions>LIBMOSQUITTO_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>',
             '      <AdditionalIncludeDirectories>$(VCPKG_INCLUDE);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>',
             '      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>',
             '    </ClCompile>',
