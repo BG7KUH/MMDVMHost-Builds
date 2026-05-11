@@ -112,8 +112,13 @@ jobs:
           $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
           if (-not $vcpkgRoot) { $vcpkgRoot = "C:\\vcpkg" }
           $triplet = if ("${{ matrix.platform }}" -eq "Win32") { "x86-windows" } else { "x64-windows" }
-          $env:INCLUDE = "$vcpkgRoot\\installed\\$triplet\\include;" + $env:INCLUDE
-          $env:LIB = "$vcpkgRoot\\installed\\$triplet\\lib;" + $env:LIB
+          $vcpkgInclude = "$vcpkgRoot\\installed\\$triplet\\include"
+          $vcpkgLib = "$vcpkgRoot\\installed\\$triplet\\lib"
+          $vcxproj = "MMDVMHost.vcxproj"
+          (Get-Content $vcxproj) \
+            -replace "C:\\\\Program Files\\\\mosquitto\\\\devel;C:\\\\Program Files;", "$vcpkgInclude;C:\\Program Files;" \
+            -replace "C:\\\\Program Files\\\\mosquitto\\\\devel;%(AdditionalLibraryDirectories)", "$vcpkgLib;%(AdditionalLibraryDirectories)" \
+            | Set-Content $vcxproj
           msbuild MMDVMHost.vcxproj /m /p:Configuration=Release /p:Platform=${{ matrix.platform }} 2>&1 | Tee-Object -FilePath ..\artifacts\${{ matrix.arch }}\build.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
